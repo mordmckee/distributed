@@ -59,9 +59,9 @@ public class MonteCarlo {
 	 * @return the double
 	 */
 	public static double monteCarloMethodSequencialMethod(long points) {
-		int inCircle = 0;
+		long inCircle = 0;
 
-		for (int i = 0; i < points; i++) {
+		for (long i = 0; i < points; i++) {
 
 			double x = Math.random();
 			double y = Math.random();
