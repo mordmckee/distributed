@@ -1,9 +1,9 @@
 package com.ipca;
 
 import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
 
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class SequencialGregLei.
  */
@@ -14,8 +14,10 @@ public class Implementations {
 	 *
 	 * @param args
 	 *            the arguments
+	 * @throws InterruptedException 
+	 * @throws ExecutionException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException, ExecutionException {
 
 		Scanner input = new Scanner(System.in);
 
@@ -41,7 +43,7 @@ public class Implementations {
 				System.out.print("How many points? ");
 				long points = input.nextLong();
 				long startTime = System.nanoTime();
-				double estimatedPI = monteCarloMethodSequencialMethod(points);
+				double estimatedPI = MonteCarlo.monteCarloMethodSequencialMethod(points);
 				long endTime = System.nanoTime();
 
 				System.out.println("Sequencial Monte-Carlo estimated PI value : " + estimatedPI + ". Executed in "
@@ -59,7 +61,7 @@ public class Implementations {
 				System.out.print("How many points? ");
 				points = input.nextLong();
 				startTime = System.nanoTime();
-				estimatedPI = gregoryLeibnizSequencialMethod(points);
+				estimatedPI = GregoryLeibniz.gregoryLeibnizSequencialMethod(points);
 				endTime = System.nanoTime();
 
 				System.out.println("Sequencial Gregory-Leibniz estimated PI value : " + estimatedPI + ". Executed in "
@@ -110,47 +112,5 @@ public class Implementations {
 				break;
 			}
 		}
-	}
-
-	/**
-	 * Desenvolva uma aplicação sequencial (i.e., sem concorrência) para o
-	 * cálculo de PI usando o método de Monte-Carlo que recebe como entrada a
-	 * quantidade de pontos a gerar e produz como resultado o valor estimado de
-	 * PI.
-	 *
-	 * @param points
-	 *            the points
-	 * @return the double
-	 */
-	public static double monteCarloMethodSequencialMethod(long points) {
-		int inCircle = 0;
-
-		for (int i = 0; i < points; i++) {
-
-			double x = Math.random();
-			double y = Math.random();
-
-			if(x * x + y * y <= 1) inCircle++;
-		}
-
-		return 4.0 * inCircle / points;
-	}
-
-	/**
-	 * Gregory leibniz.
-	 *
-	 * @param numberTotalGenerated
-	 *            the number total generated
-	 * @return the double
-	 */
-	public static double gregoryLeibnizSequencialMethod(double numberTotalGenerated) {
-		double factor = 1.0;
-		double sum = 0.0;
-
-		for (int k = 0; k < numberTotalGenerated; k++) {
-			sum += factor / (2 * k + 1);
-			factor = -factor;
-		}
-		return 4.0 * sum;
 	}
 }

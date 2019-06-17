@@ -1,20 +1,15 @@
 package com.ipca;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 // TODO: Auto-generated Javadoc
-
 /**
  * The Class GregoryLeibniz.
  */
 public class GregoryLeibniz {
-	
-	/** The in circle. */
-	private double factor;
-	
-	/** The sum. */
-	private double sum;
 	
 	/** The points. */
 	private long points;
@@ -22,7 +17,11 @@ public class GregoryLeibniz {
 	/** The n processors. */
 	private int nProcessors;
 	
-
+	/**
+	 * Instantiates a new gregory leibniz.
+	 */
+	public GregoryLeibniz() { }
+	
 	/**
 	 * Instantiates a new gregory leibniz.
 	 *
@@ -35,41 +34,44 @@ public class GregoryLeibniz {
 		this.nProcessors = nProcessors;
 	}
 
-	
-	/**
-	 * The Class GregoryLeibnizImpl.
-	 */
-	public class GregoryLeibnizImpl implements Runnable { 	
-		
-		/* (non-Javadoc)
-		 * @see java.lang.Runnable#run()
-		 */
-		@Override
-		public void run() {
-			for (int k = 0; k < points; k++) {
-				if(k % 2 == 0) factor = 1.0;
-				else factor = -1.0;
-								
-				sum += factor / (2*k +1);
-			}
-		}
-	}
-	
 	/**
 	 * Calculate PI.
 	 *
 	 * @return the double
+	 * @throws InterruptedException the interrupted exception
+	 * @throws ExecutionException the execution exception
 	 */
-	public double calculatePI() {
-		ExecutorService executor = Executors.newWorkStealingPool(nProcessors);
+	public double calculatePI() throws InterruptedException, ExecutionException {
 		
-		Runnable worker = new GregoryLeibnizImpl();
-		executor.execute(worker);
+		double sum = 0;
 		
+		ExecutorService executor = Executors.newFixedThreadPool(nProcessors);
+		
+		for (long k = 0; k < points; k += points / nProcessors) {
+			Future<Double> t = executor.submit(new GregoryLeibnizImpl(k, k + points / nProcessors));
+			sum += t.get().doubleValue();
+		}
+							
 		executor.shutdown();
 		
-		while(!executor.isTerminated()) { }
-		
+		return 4.0 * sum;
+	}
+	
+	/**
+	 * Gregory leibniz.
+	 *
+	 * @param numberTotalGenerated
+	 *            the number total generated
+	 * @return the double
+	 */
+	public static double gregoryLeibnizSequencialMethod(double numberTotalGenerated) {
+		double factor = 1.0;
+		double sum = 0.0;
+
+		for (int k = 0; k < numberTotalGenerated; k++) {
+			sum += factor / (2 * k + 1);
+			factor = -factor;
+		}
 		return 4.0 * sum;
 	}
 }
