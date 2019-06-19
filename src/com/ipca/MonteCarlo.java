@@ -1,54 +1,66 @@
 package com.ipca;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * The Class MonteCarlo.
  */
 public class MonteCarlo {
 		
-	/** The points. */
-	private long points;
-	
-	/** The n processors. */
-	private int nProcessors = 1;
-	
 	/**
-	 * Instantiates a new monte carlo.
+	 * Monte carlo method concorrent method.
 	 *
 	 * @param points the points
 	 * @param nProcessors the n processors
-	 */
-	public MonteCarlo(long points, int nProcessors) {
-		super();
-		this.points = points;
-		this.nProcessors = nProcessors;
-	}
-
-	
-	/**
-	 * Calculate PI.
-	 *
 	 * @return the double
 	 * @throws InterruptedException the interrupted exception
 	 * @throws ExecutionException the execution exception
 	 */
-	public double calculatePI() throws InterruptedException, ExecutionException {
+	public static double monteCarloMethodConcorrentMethod(long points, int nProcessors) throws InterruptedException, ExecutionException {
+		
 		double sum = 0;
 		
-		ExecutorService executor = Executors.newWorkStealingPool(nProcessors);
+		List<Future<Double>> tasks = new ArrayList<>();
 		
-		for (long k = 0; k < points; k += points / nProcessors) {
-			Future<Double> t = executor.submit(new MonteCarloImpl(k, k + points / nProcessors));
-			sum += t.get().doubleValue();
+		ExecutorService executor = Executors.newFixedThreadPool(nProcessors);
+		
+		for (long i = 0; i < points; i += points / nProcessors) {
+			Future<Double> task = executor.submit(() -> {
+				long inCircle = 0;
+				double val = 0;
+				
+				for(long k = 0; k < points / nProcessors; k++) {
+					double x = ThreadLocalRandom.current().nextDouble();
+					double y = ThreadLocalRandom.current().nextDouble();
+			
+					if(x * x + y * y <= 1) inCircle++;
+				}
+				val = 4.0 * inCircle;
+				
+				return val;
+			});
+			
+			tasks.add(task);
 		}
-							
-		executor.shutdown();
 		
+		long pending = nProcessors;
+		while(pending > 0) {
+			for(Future<Double> future : tasks) {
+				if(future.isDone() && pending > 0) {
+					sum += future.get();
+					pending--;
+				}
+			}
+		}		
+
+		executor.shutdown();
+			
 		return sum / points;
 	}
 
@@ -63,8 +75,8 @@ public class MonteCarlo {
 
 		for (long i = 0; i < points; i++) {
 
-			double x = Math.random();
-			double y = Math.random();
+			double x = ThreadLocalRandom.current().nextDouble();
+			double y = ThreadLocalRandom.current().nextDouble();
 
 			if(x * x + y * y <= 1) inCircle++;
 		}

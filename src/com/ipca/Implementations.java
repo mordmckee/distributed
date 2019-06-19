@@ -91,8 +91,7 @@ public class Implementations {
 						nThreads = input.nextInt();
 
 						long startTime = System.nanoTime();
-						MonteCarlo monteCarloObj = new MonteCarlo(points, nThreads);
-						double estimatedPI = monteCarloObj.calculatePI();
+						double estimatedPI = MonteCarlo.monteCarloMethodConcorrentMethod(points, nThreads);
 
 						long endTime = System.nanoTime();
 
@@ -116,8 +115,7 @@ public class Implementations {
 							nThreads = input.nextInt();
 
 							long startTime = System.nanoTime();
-							GregoryLeibniz gregoryLeibnizObj = new GregoryLeibniz(points, nThreads);
-							double estimatedPI = gregoryLeibnizObj.calculatePI();
+							double estimatedPI = GregoryLeibniz.gregoryLeibnizConcorrentMethod(points, nThreads);
 
 							long endTime = System.nanoTime();
 
