@@ -1,4 +1,4 @@
-package com.ipca.concorrente;
+package com.ipca.distributed;
 
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;

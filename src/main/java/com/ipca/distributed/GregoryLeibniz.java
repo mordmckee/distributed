@@ -1,4 +1,4 @@
-package com.ipca.concorrente;
+package com.ipca.distributed;
 
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;

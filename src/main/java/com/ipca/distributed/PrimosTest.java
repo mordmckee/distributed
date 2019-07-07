@@ -1,4 +1,4 @@
-package com.ipca.concorrente;
+package com.ipca.distributed;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
