@@ -1,271 +1,171 @@
 package com.ipca.distributed;
 
-import java.io.Serializable;
-import java.util.concurrent.TimeUnit;
-
+import java.util.concurrent.CountDownLatch;
+import com.ipca.distributed.Pi.Calculate;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.Inbox;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
+import akka.actor.UntypedAbstractActor;
 import akka.routing.RoundRobinPool;
-import scala.concurrent.duration.Duration;
 
 /**
  * The Class GregoryLeibniz.
  */
 public class GregoryLeibniz {
-	
+		
+	static volatile CountDownLatch latch;
+		
 	/**
 	 * Gregory leibniz distribuited method.
 	 *
 	 * @param iterations the iterations
 	 * @param concurrentNr the concurrent nr
 	 * @return the double
+	 * @throws InterruptedException 
 	 */
-	public double gregoryLeibnizDistribuitedMethod(long iterations, int concurrentNr) {
+	public void gregoryLeibnizDistribuitedMethod(long iterations, int concurrentNr) throws InterruptedException {
 		
-		final ActorSystem system = ActorSystem.create("gregoryLeibnizAKKA");
+		GregoryLeibniz gregoryLeibniz = new GregoryLeibniz();
 		
-		final Inbox inbox = Inbox.create(system);
-		
-		final ActorRef controller = system.actorOf(Props.create(Controller.class), "controller");
-		
-		final ActorRef piActorRef = system.actorOf(new RoundRobinPool(concurrentNr).props(Props.create(PI.class)), "router");
-		
-		inbox.send(controller, new CalculateIntervalMessage(iterations, piActorRef));
-		
-		ResponsePIMessage response = (ResponsePIMessage) inbox.receive(Duration.create(500, TimeUnit.SECONDS));
-		
-		double pi = response.getPi();
-					
-		system.shutdown();
-		
-		return pi;
-		
-	}
-	
-	/**
-	 * The Class Controller.
-	 */
-	public static class Controller extends UntypedActor {
-		
-		/** The count responses. */
-		long countResponses;
-		
-		/** The pi. */
-		double pi = 0;
-		
-		/** The actor PI. */
-		ActorRef actorPI;
-		
-		/** The actor iniciator. */
-		ActorRef actorIniciator;
-		
-		/**
-		 * On receive.
-		 *
-		 * @param message the message
-		 */
-		public void onReceive(Object message) {
-			if(message instanceof CalculateIntervalMessage) {
-				this.countResponses = ((CalculateIntervalMessage) message).getNum();
-				this.actorPI = ((CalculateIntervalMessage) message).getActorPI();
-				this.actorIniciator = getSender();
-				
-				for(long i = 0; i < countResponses; i++) {
-					actorPI.tell(new CalculatePIMessage(i), getSelf());
-				}
-				
-				//System.out.println("Controller: Send CalculatePIMessage -> " + countResponses);
-			}
-			else if(message instanceof ResponsePIMessage) {
-				pi = ((ResponsePIMessage) message).getPi();
-				
-				countResponses -= 1;
-				
-				//System.out.println("Controller: ResultMessage");
-				
-				if(countResponses == 0) {
-					actorIniciator.tell(new ResponsePIMessage(pi), getSelf());
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Calculate PI.
-	 *
-	 * @param n the n
-	 * @return the double
-	 */
-	public static double calculatePI(long n) {
-		double factor = 1.0;
-		double sum = 0.0;
-
-		for (long k = 0; k < n; k++) {
-			if(k % 2 == 0) factor = 1.0;
-			else factor = -1;
-			
-			sum += factor / (2 * k + 1);
-		}
-		return 4.0 * sum;
-	}
-	
-	/**
-	 * The Class PI.
-	 */
-	public static class PI extends UntypedActor {
-		
-		/**
-		 * On receive.
-		 *
-		 * @param message the message
-		 */
-		public void onReceive(Object message) {
-			if(message instanceof CalculatePIMessage) {
-				long num = ((CalculatePIMessage) message).getNum();
-				
-				//System.out.println("PI: CalculatePIMessage -> " + num);
-				
-				getSender().tell(new ResponsePIMessage(calculatePI(num)), getSelf());
-			}
-			else {
-				unhandled(message);
-			}
-		}
-	}
-	
-	/**
-	 * The Class CalculatePIMessage.
-	 */
-	public static class CalculatePIMessage implements Serializable {
-		
-		/** The num. */
-		private long num;
-		
-		/**
-		 * Instantiates a new calculate PI message.
-		 *
-		 * @param num the num
-		 */
-		public CalculatePIMessage(long num) {
-			this.num = num;
-		}
-
-		/**
-		 * Gets the num.
-		 *
-		 * @return the num
-		 */
-		public long getNum() {
-			return num;
-		}
-
-		/**
-		 * Sets the num.
-		 *
-		 * @param num the new num
-		 */
-		public void setNum(long num) {
-			this.num = num;
-		}
-	}
-	
-	/**
-	 * The Class ResponsePIMessage.
-	 */
-	public static class ResponsePIMessage {
-		
-		/** The pi. */
-		private double pi;
-		
-		/**
-		 * Instantiates a new response PI message.
-		 *
-		 * @param pi the pi
-		 */
-		public ResponsePIMessage(double pi) {
-			this.pi = pi;
-		}
-		
-		/**
-		 * Gets the pi.
-		 *
-		 * @return the pi
-		 */
-		public double getPi() {
-			return pi;
-		}
-		
-		/**
-		 * Sets the pi.
-		 *
-		 * @param pi the new pi
-		 */
-		public void setPi(double pi) {
-			this.pi = pi;
-		}
-	}
-	
-	/**
-	 * The Class CalculateIntervalMessage.
-	 */
-	public static class CalculateIntervalMessage {
-	   
-   	/** The num. */
-   	private long num;
-        
-        /** The actor PI. */
-        public ActorRef actorPI;
-        
-        /**
-         * Instantiates a new calculate interval message.
-         *
-         * @param num the num
-         * @param actorPI the actor PI
-         */
-        public CalculateIntervalMessage(long num, ActorRef actorPI) {
-            this.num = num;
-            this.actorPI = actorPI;
+        for (int numActors = 1; numActors <= concurrentNr; numActors++) {
+            //latch = new CountDownLatch(1);
+            gregoryLeibniz.actorPI(numActors, iterations, concurrentNr);
+            //latch.await();
         }
-		
-		/**
-		 * Gets the num.
-		 *
-		 * @return the num
-		 */
-		public long getNum() {
-			return num;
-		}
-		
-		/**
-		 * Sets the num.
-		 *
-		 * @param num the new num
-		 */
-		public void setNum(long num) {
-			this.num = num;
-		}
-		
-		/**
-		 * Gets the actor PI.
-		 *
-		 * @return the actor PI
-		 */
-		public ActorRef getActorPI() {
-			return actorPI;
-		}
-		
-		/**
-		 * Sets the actor PI.
-		 *
-		 * @param actorPI the new actor PI
-		 */
-		public void setActorPI(ActorRef actorPI) {
-			this.actorPI = actorPI;
-		}
 	}
+	
+	public void actorPI(final long nrOfWorkers, final long nrOfElements, final long nrOfMessages) {
+		  
+        ActorSystem system = ActorSystem.create("PiSystem");
+
+        ActorRef listener = system.actorOf(Props.create(Listener.class), "listener");
+
+        ActorRef master = system.actorOf(Props.create(Master.class, nrOfWorkers, nrOfMessages, nrOfElements, listener), "master");
+
+        master.tell(new Calculate(), master);
+	  }
+	
+	static class CalculatePI { }
+	
+	static class Work {
+        private final long start;
+        private final long nrOfElements;
+
+        public Work(long start, long nrOfElements) {
+            this.start = start;
+            this.nrOfElements = nrOfElements;
+        }
+
+        public long getStart() {
+            return start;
+        }
+
+        public long getNrOfElements() {
+            return nrOfElements;
+        }
+    }
+
+    static class Result {
+        private final double value;
+
+        public Result(double value) {
+            this.value = value;
+        }
+
+        public double getValue() {
+            return value;
+        }
+    }
+
+    static class PiApproximation {
+        private final double pi;
+
+        public PiApproximation(double pi) {
+            this.pi = pi;
+        }
+
+        public double getPi() {
+            return pi;
+        }
+    }
+
+    public static class Worker extends UntypedAbstractActor {
+
+        private double calculatePiFor(long start, long nrOfElements) {
+            double acc = 0.0;
+            for (long i = start * nrOfElements; i <= ((start + 1) * nrOfElements - 1); i++) {
+                acc += 4.0 * (1 - (i % 2) * 2) / (2 * i + 1);
+            }
+            return acc;
+        }
+
+        public void onReceive(Object message) {
+            if (message instanceof Work) {
+                Work work = (Work) message;
+                double result = calculatePiFor(work.getStart(), work.getNrOfElements());
+                getSender().tell(new Result(result), getSelf());
+            } else {
+                unhandled(message);
+            }
+        }
+    }
+
+    public static class Master extends UntypedAbstractActor {
+        private final long nrOfMessages;
+        private final long nrOfElements;
+
+        private double pi;
+        private long nrOfResults;
+        private final ActorRef listener;
+        private final ActorRef workerRouter;
+
+        public Master(
+                final long nrOfWorkers,
+                long nrOfMessages,
+                long nrOfElements,
+                ActorRef listener) {
+
+            this.nrOfMessages = nrOfMessages;
+            this.nrOfElements = nrOfElements;
+            this.listener = listener;
+
+            workerRouter = this.getContext().actorOf(new RoundRobinPool((int) nrOfWorkers).props(Props.create(Worker.class)), "workerRouter");
+
+        }
+
+        public void onReceive(Object message) {
+            if (message instanceof Calculate) {
+                for (long start = 0; start < nrOfMessages; start++) {
+                    workerRouter.tell(new Work(start, nrOfElements), getSelf());
+                }
+            } else if (message instanceof Result) {
+                Result result = (Result) message;
+                pi += result.getValue();
+                nrOfResults += 1;
+                if (nrOfResults == nrOfMessages) {
+                    listener.tell(new PiApproximation(pi), getSelf());
+                    // Stops this actor and all its supervised children
+                    getContext().stop(getSelf());
+                }
+            } else {
+                unhandled(message);
+            }
+        }
+    }
+
+    public static class Listener extends UntypedAbstractActor {
+        public void onReceive(Object message) {
+            if (message instanceof PiApproximation) {
+                PiApproximation approximation = (PiApproximation) message;
+                System.out.println(String.format("Pi approximation: %s", approximation.getPi()));
+                getContext().system().terminate();
+                //latch.countDown();
+            } else {
+                unhandled(message);
+            }
+        }
+    }
+	
 }
 
 

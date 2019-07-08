@@ -1,5 +1,6 @@
 package com.ipca.distributed;
 
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 
@@ -21,7 +22,6 @@ public class Implementations {
 		
 		while (true) {
 			
-		
 			System.out.println("Which implementation do you want to run?");
 			System.out.println("1) Gregory-Leibniz Distributed");
 			System.out.println("2) Monte-Carlo Distributed");
@@ -47,12 +47,15 @@ public class Implementations {
 							
 							long startTime = System.nanoTime();
 							GregoryLeibniz gregoryLeibniz = new GregoryLeibniz();
-							double estimatedPI = gregoryLeibniz.gregoryLeibnizDistribuitedMethod(iterations, concurrentNr);
+							gregoryLeibniz.gregoryLeibnizDistribuitedMethod(iterations, concurrentNr);
+					
 							long endTime = System.nanoTime();
 
+							/*
 							System.out.println("Distributed Gregory-Leibniz estimated PI value : " + estimatedPI
 									+ ". Executed in " + ((endTime - startTime) / 1e6) + " ms.");
-							System.out.println("===========================\n");						
+							System.out.println("===========================\n");
+							*/						
 						}
 						else {
 							System.out.println("Invalid number!!!\n");	
