@@ -1,6 +1,5 @@
 package com.ipca.distributed;
 
-import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 
@@ -39,7 +38,7 @@ public class Implementations {
 					if (input.hasNextLong()) {
 						iterations = input.nextLong();
 						
-						System.out.print("How many concurrent calculations?? ");
+						System.out.print("How many distributed calculations?? ");
 						
 						if(input.hasNextInt()) {
 							
@@ -48,14 +47,42 @@ public class Implementations {
 							long startTime = System.nanoTime();
 							GregoryLeibniz gregoryLeibniz = new GregoryLeibniz();
 							gregoryLeibniz.gregoryLeibnizDistribuitedMethod(iterations, concurrentNr);
-					
 							long endTime = System.nanoTime();
 
-							/*
-							System.out.println("Distributed Gregory-Leibniz estimated PI value : " + estimatedPI
-									+ ". Executed in " + ((endTime - startTime) / 1e6) + " ms.");
-							System.out.println("===========================\n");
-							*/						
+							
+							System.out.println("Executed in " + ((endTime - startTime) / 1e6) + " ms.");
+							System.out.println("===========================\n");					
+						}
+						else {
+							System.out.println("Invalid number!!!\n");	
+						}
+
+						
+					} else {
+						System.out.println("Invalid number!!!\n");	
+					}
+				break;
+				case 2:
+					System.out.print("How many iterations?? ");
+
+					iterations = 0l;
+					if (input.hasNextLong()) {
+						iterations = input.nextLong();
+						
+						System.out.print("How many distributed calculations?? ");
+						
+						if(input.hasNextInt()) {
+							
+							int concurrentNr = input.nextInt();
+							
+							long startTime = System.nanoTime();
+							MonteCarlo monteCarlo = new MonteCarlo();
+							monteCarlo.monteCarloDistribuitedMethod(iterations, concurrentNr);
+							long endTime = System.nanoTime();
+
+							
+							System.out.println("Executed in " + ((endTime - startTime) / 1e6) + " ms.");
+							System.out.println("===========================\n");					
 						}
 						else {
 							System.out.println("Invalid number!!!\n");	

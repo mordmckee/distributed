@@ -1,18 +1,19 @@
 package com.ipca.distributed;
 
 import java.util.concurrent.CountDownLatch;
-import com.ipca.distributed.Pi.Calculate;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.actor.UntypedAbstractActor;
 import akka.routing.RoundRobinPool;
 
+
 /**
  * The Class GregoryLeibniz.
  */
 public class GregoryLeibniz {
 		
+	/** The latch. */
 	static volatile CountDownLatch latch;
 		
 	/**
@@ -21,88 +22,168 @@ public class GregoryLeibniz {
 	 * @param iterations the iterations
 	 * @param concurrentNr the concurrent nr
 	 * @return the double
-	 * @throws InterruptedException 
+	 * @throws InterruptedException the interrupted exception
 	 */
 	public void gregoryLeibnizDistribuitedMethod(long iterations, int concurrentNr) throws InterruptedException {
 		
 		GregoryLeibniz gregoryLeibniz = new GregoryLeibniz();
 		
-        for (int numActors = 1; numActors <= concurrentNr; numActors++) {
-            //latch = new CountDownLatch(1);
-            gregoryLeibniz.actorPI(numActors, iterations, concurrentNr);
-            //latch.await();
+        for (int nActors = 1; nActors <= concurrentNr; nActors++) {
+            latch = new CountDownLatch(1);
+            gregoryLeibniz.actorPI(nActors, iterations, concurrentNr);
+            latch.await();
         }
 	}
 	
-	public void actorPI(final long nrOfWorkers, final long nrOfElements, final long nrOfMessages) {
+	/**
+	 * Actor PI.
+	 *
+	 * @param nrOfWorkers the nr of workers
+	 * @param iterations the iterations
+	 * @param nrOfMessages the nr of messages
+	 */
+	public void actorPI(final long nrOfWorkers, final long iterations, final long nrOfMessages) {
 		  
         ActorSystem system = ActorSystem.create("PiSystem");
 
         ActorRef listener = system.actorOf(Props.create(Listener.class), "listener");
 
-        ActorRef master = system.actorOf(Props.create(Master.class, nrOfWorkers, nrOfMessages, nrOfElements, listener), "master");
+        ActorRef master = system.actorOf(Props.create(Master.class, nrOfWorkers, iterations, listener), "master");
 
-        master.tell(new Calculate(), master);
+        master.tell(new CalculatePI(), master);
 	  }
 	
+	/**
+	 * The Class CalculatePI.
+	 */
 	static class CalculatePI { }
 	
-	static class Work {
-        private final long start;
-        private final long nrOfElements;
+	/**
+	 * The Class Work.
+	 */
+	private static class Work {
+        
+        /** The begin. */
+        private long begin;
+        
+        /** The iterations. */
+        private long iterations;
 
-        public Work(long start, long nrOfElements) {
-            this.start = start;
-            this.nrOfElements = nrOfElements;
+        /**
+         * Instantiates a new work.
+         *
+         * @param begin the begin
+         * @param iterations the iterations
+         */
+        public Work(long begin, long iterations) {
+            this.begin = begin;
+            this.iterations = iterations;
         }
 
-        public long getStart() {
-            return start;
+        /**
+         * Gets the begin.
+         *
+         * @return the begin
+         */
+        public long getbegin() {
+            return begin;
         }
 
-        public long getNrOfElements() {
-            return nrOfElements;
+        /**
+         * Gets the iterations.
+         *
+         * @return the iterations
+         */
+        public long getiterations() {
+            return iterations;
         }
     }
 
-    static class Result {
-        private final double value;
+	/**
+	 * The Class Result.
+	 */
+	private static class Result {
+        
+        /** The pi. */
+        private double pi;
 
-        public Result(double value) {
-            this.value = value;
+        /**
+         * Instantiates a new result.
+         *
+         * @param pi the pi
+         */
+        public Result(double pi) {
+            this.pi = pi;
         }
 
-        public double getValue() {
-            return value;
+        /**
+         * Gets the pi.
+         *
+         * @return the pi
+         */
+        public double getPI() {
+            return pi;
         }
     }
 
+    /**
+     * The Class PiApproximation.
+     */
     static class PiApproximation {
-        private final double pi;
+        
+        /** The pi. */
+        private double pi;
 
+        /**
+         * Instantiates a new pi approximation.
+         *
+         * @param pi the pi
+         */
         public PiApproximation(double pi) {
             this.pi = pi;
         }
 
+        /**
+         * Gets the pi.
+         *
+         * @return the pi
+         */
         public double getPi() {
             return pi;
         }
     }
 
+    /**
+     * The Class Worker.
+     */
     public static class Worker extends UntypedAbstractActor {
-
-        private double calculatePiFor(long start, long nrOfElements) {
-            double acc = 0.0;
-            for (long i = start * nrOfElements; i <= ((start + 1) * nrOfElements - 1); i++) {
-                acc += 4.0 * (1 - (i % 2) * 2) / (2 * i + 1);
+    	
+        /**
+         * Calculate pi for.
+         *
+         * @param begin the begin
+         * @param iterations the iterations
+         * @return the double
+         */
+        private double calculatePiFor(long begin, long iterations) {
+            double sum = 0.0;
+            double factor = 1.0;
+            for (long k = begin * iterations; k <= ((begin + 1) * iterations - 1); k++) {
+            	if(k % 2 == 0) factor = 1.0;
+            	else factor = -1.0;
+            	
+            	sum += factor / (2 * k + 1);
             }
-            return acc;
+            return 4.0 * sum;
         }
 
+        /* (non-Javadoc)
+         * @see akka.actor.UntypedAbstractActor#onReceive(java.lang.Object)
+         */
         public void onReceive(Object message) {
             if (message instanceof Work) {
                 Work work = (Work) message;
-                double result = calculatePiFor(work.getStart(), work.getNrOfElements());
+                double result = calculatePiFor(work.getbegin(), work.getiterations());
                 getSender().tell(new Result(result), getSelf());
             } else {
                 unhandled(message);
@@ -110,62 +191,73 @@ public class GregoryLeibniz {
         }
     }
 
+    /**
+     * The Class Master.
+     */
     public static class Master extends UntypedAbstractActor {
-        private final long nrOfMessages;
-        private final long nrOfElements;
-
+        
+        /** The iterations. */
+        private final long iterations;
+        
+        /** The pi. */
         private double pi;
-        private long nrOfResults;
+        
+        /** The listener. */
         private final ActorRef listener;
+        
+        /** The worker router. */
         private final ActorRef workerRouter;
 
-        public Master(
-                final long nrOfWorkers,
-                long nrOfMessages,
-                long nrOfElements,
-                ActorRef listener) {
-
-            this.nrOfMessages = nrOfMessages;
-            this.nrOfElements = nrOfElements;
+        /**
+         * Instantiates a new master.
+         *
+         * @param nrOfWorkers the nr of workers
+         * @param iterations the iterations
+         * @param listener the listener
+         */
+        public Master(long nrOfWorkers, long iterations, ActorRef listener) {
+            this.iterations = iterations;
             this.listener = listener;
-
             workerRouter = this.getContext().actorOf(new RoundRobinPool((int) nrOfWorkers).props(Props.create(Worker.class)), "workerRouter");
-
         }
 
+        /* (non-Javadoc)
+         * @see akka.actor.UntypedAbstractActor#onReceive(java.lang.Object)
+         */
         public void onReceive(Object message) {
-            if (message instanceof Calculate) {
-                for (long start = 0; start < nrOfMessages; start++) {
-                    workerRouter.tell(new Work(start, nrOfElements), getSelf());
-                }
+            if (message instanceof CalculatePI) {
+            	workerRouter.tell(new Work(0, iterations), getSelf());
             } else if (message instanceof Result) {
                 Result result = (Result) message;
-                pi += result.getValue();
-                nrOfResults += 1;
-                if (nrOfResults == nrOfMessages) {
-                    listener.tell(new PiApproximation(pi), getSelf());
-                    // Stops this actor and all its supervised children
-                    getContext().stop(getSelf());
-                }
+                pi += result.getPI();
+                listener.tell(new PiApproximation(pi), getSelf());
+                getContext().stop(getSelf());
+                
             } else {
                 unhandled(message);
             }
         }
     }
 
+    /**
+     * The Class Listener.
+     */
     public static class Listener extends UntypedAbstractActor {
+        
+        /* (non-Javadoc)
+         * @see akka.actor.UntypedAbstractActor#onReceive(java.lang.Object)
+         */
         public void onReceive(Object message) {
             if (message instanceof PiApproximation) {
                 PiApproximation approximation = (PiApproximation) message;
                 System.out.println(String.format("Pi approximation: %s", approximation.getPi()));
                 getContext().system().terminate();
-                //latch.countDown();
+                latch.countDown();
             } else {
                 unhandled(message);
             }
         }
     }
-	
 }
 
 
