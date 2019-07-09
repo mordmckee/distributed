@@ -1,4 +1,4 @@
-# distributed
+# Distributed
 Masters
 Programação Concorrente e Distribuída
 Nuno Lopes
