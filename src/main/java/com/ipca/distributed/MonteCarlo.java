@@ -1,6 +1,8 @@
 package com.ipca.distributed;
 
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -16,15 +18,17 @@ public class MonteCarlo {
 	/** The latch. */
 	static volatile CountDownLatch latch;
 		
-
+	private static List<Double> piList = new ArrayList<>();
+		
 	/**
 	 * Monte carlo distribuited method.
 	 *
 	 * @param iterations the iterations
 	 * @param concurrentNr the concurrent nr
+	 * @return 
 	 * @throws InterruptedException the interrupted exception
 	 */
-	public void monteCarloDistribuitedMethod(long iterations, int concurrentNr) throws InterruptedException {
+	public List<Double> monteCarloDistribuitedMethod(long iterations, int concurrentNr) throws InterruptedException {
 		
 		MonteCarlo monteCarlo = new MonteCarlo();
 		
@@ -33,6 +37,8 @@ public class MonteCarlo {
             monteCarlo.actorPI(nActors, iterations, concurrentNr);
             latch.await();
         }
+        
+        return piList;
 	}
 	
 	/**
@@ -47,7 +53,7 @@ public class MonteCarlo {
         ActorSystem system = ActorSystem.create("PiSystem");
 
         ActorRef listener = system.actorOf(Props.create(Listener.class), "listener");
-
+        
         ActorRef master = system.actorOf(Props.create(Master.class, nrOfWorkers, iterations, listener), "master");
 
         master.tell(new CalculatePI(), master);
@@ -235,7 +241,7 @@ public class MonteCarlo {
      * The Class Listener.
      */
     public static class Listener extends UntypedAbstractActor {
-        
+    	        
         /* (non-Javadoc)
          * @see akka.actor.UntypedAbstractActor#onReceive(java.lang.Object)
          */
@@ -243,6 +249,9 @@ public class MonteCarlo {
             if (message instanceof PiApproximation) {
                 PiApproximation approximation = (PiApproximation) message;
                 System.out.println(String.format("Pi approximation: %s", approximation.getPi()));
+                
+                piList.add(approximation.getPi());
+                
                 getContext().system().terminate();
                 latch.countDown();
             } else {

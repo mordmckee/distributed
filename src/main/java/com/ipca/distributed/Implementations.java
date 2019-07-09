@@ -1,5 +1,6 @@
 package com.ipca.distributed;
 
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 
@@ -77,10 +78,16 @@ public class Implementations {
 							
 							long startTime = System.nanoTime();
 							MonteCarlo monteCarlo = new MonteCarlo();
-							monteCarlo.monteCarloDistribuitedMethod(iterations, concurrentNr);
+							List<Double> piList = monteCarlo.monteCarloDistribuitedMethod(iterations, concurrentNr);
 							long endTime = System.nanoTime();
-
 							
+							double estimatedPI = 0.0;
+							for(Double piValue : piList) {
+								if(piValue != null) estimatedPI += piValue.doubleValue();
+							}
+							estimatedPI /= piList.size();
+
+							System.out.println("Mean PI Value -> " + estimatedPI);
 							System.out.println("Executed in " + ((endTime - startTime) / 1e6) + " ms.");
 							System.out.println("===========================\n");					
 						}
