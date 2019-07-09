@@ -75,18 +75,8 @@ public class MonteCarlo {
          * @param begin the begin
          * @param iterations the iterations
          */
-        public Work(long begin, long iterations) {
-            this.begin = begin;
+        public Work(long iterations) {
             this.iterations = iterations;
-        }
-
-        /**
-         * Gets the begin.
-         *
-         * @return the begin
-         */
-        public long getbegin() {
-            return begin;
         }
 
         /**
@@ -165,10 +155,10 @@ public class MonteCarlo {
          * @param iterations the iterations
          * @return the double
          */
-        private double calculatePiFor(long begin, long iterations) {
+        private double calculatePiFor(long iterations) {
         	long inCircle = 0;
 
-    		for (long i = begin; i < iterations; i++) {
+    		for (long i = 0; i < iterations; i++) {
 
     			double x = ThreadLocalRandom.current().nextDouble();
     			double y = ThreadLocalRandom.current().nextDouble();
@@ -185,7 +175,7 @@ public class MonteCarlo {
         public void onReceive(Object message) {
             if (message instanceof Work) {
                 Work work = (Work) message;
-                double result = calculatePiFor(work.getbegin(), work.getiterations());
+                double result = calculatePiFor(work.getiterations());
                 getSender().tell(new Result(result), getSelf());
             } else {
                 unhandled(message);
@@ -228,7 +218,7 @@ public class MonteCarlo {
          */
         public void onReceive(Object message) {
             if (message instanceof CalculatePI) {
-            	workerRouter.tell(new Work(0, iterations), getSelf());
+            	workerRouter.tell(new Work(iterations), getSelf());
             } else if (message instanceof Result) {
                 Result result = (Result) message;
                 pi += result.getPI();

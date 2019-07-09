@@ -62,32 +62,19 @@ public class GregoryLeibniz {
 	 * The Class Work.
 	 */
 	private static class Work {
-        
-        /** The begin. */
-        private long begin;
-        
+                
         /** The iterations. */
         private long iterations;
 
         /**
          * Instantiates a new work.
          *
-         * @param begin the begin
          * @param iterations the iterations
          */
-        public Work(long begin, long iterations) {
-            this.begin = begin;
+        public Work(long iterations) {
             this.iterations = iterations;
         }
 
-        /**
-         * Gets the begin.
-         *
-         * @return the begin
-         */
-        public long getbegin() {
-            return begin;
-        }
 
         /**
          * Gets the iterations.
@@ -165,10 +152,10 @@ public class GregoryLeibniz {
          * @param iterations the iterations
          * @return the double
          */
-        private double calculatePiFor(long begin, long iterations) {
+        private double calculatePiFor(long iterations) {
             double sum = 0.0;
             double factor = 1.0;
-            for (long k = begin * iterations; k <= ((begin + 1) * iterations - 1); k++) {
+            for (long k = 0; k < iterations; k++) {
             	if(k % 2 == 0) factor = 1.0;
             	else factor = -1.0;
             	
@@ -183,7 +170,7 @@ public class GregoryLeibniz {
         public void onReceive(Object message) {
             if (message instanceof Work) {
                 Work work = (Work) message;
-                double result = calculatePiFor(work.getbegin(), work.getiterations());
+                double result = calculatePiFor(work.getiterations());
                 getSender().tell(new Result(result), getSelf());
             } else {
                 unhandled(message);
@@ -226,7 +213,7 @@ public class GregoryLeibniz {
          */
         public void onReceive(Object message) {
             if (message instanceof CalculatePI) {
-            	workerRouter.tell(new Work(0, iterations), getSelf());
+            	workerRouter.tell(new Work(iterations), getSelf());
             } else if (message instanceof Result) {
                 Result result = (Result) message;
                 pi += result.getPI();
